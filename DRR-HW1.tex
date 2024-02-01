@@ -1,0 +1,53 @@
+\documentclass[12pt]{article}
+
+% Packages
+\usepackage{amsmath, amssymb}
+\usepackage{geometry}
+\usepackage{enumerate}
+
+% Page layout settings
+\geometry{a4paper, margin=1in}
+
+\begin{document}
+
+% Title section
+\title{CS 2340 Assignment 1}
+\author{Diego Rodrigues Rodriguez}
+\date{\today}
+\maketitle
+
+% Questions and Answers
+\section*{Question 1}
+\textbf{Aside from the smart cell phones used by a billion people, list and describe four other types of computers.}
+\begin{enumerate}[a)]
+    \item Personal computers (PCs): these are meant to be used by a single person at a time. Designed to be easy to use and affordable.
+    \item Supercomputers: these are the most powerful computers in the world. They are used for complex scientific and engineering problems, such as weather forecasting, climate research, and nuclear simulations.
+    \item Servers: these are normally stored in data centers for running software applications that serve many users. They are designed to be reliable and scalable.
+    \item Embedded computers: these are small, lightweight computers that are built into other products and are dedicated to a specific task. They are used in cars, airplanes, and consumer electronics.
+\end{enumerate}
+
+\section*{Question 2}
+\textbf{Match the seven great ideas in computer architecture to ideas from other fields.}
+
+\begin{enumerate}[a)]
+    \item Assembly lines in automobile manufacturing - \textbf{Performance via pipelining}
+    \item Suspension bridge cables - \textbf{Dependability via redundancy}
+    \item Aircraft and marine navigation systems that incorporate wind information - \textbf{Performance via prediction}
+    \item Express elevators in buildings - \textbf{Common case fast}
+    \item Library reserve desk - \textbf{Hierarchy of memories}
+    \item A weather simulation model that runs on a supercomputer - \textbf{Performance via parallelism}
+    \item Building self-driving cars - \textbf{Use abstraction to simplify design}
+\end{enumerate}
+
+\section*{Question 3}
+\textbf{Assume a color display using 8 bits for each of the primary colors (red, green, blue) per pixel
+and a frame size of 1280 x 1024}
+\begin{enumerate}[a)]
+    \item \textbf{What is the size of the frame buffer in bytes?} We have $1280 \times 1024 = 1,310,720$ pixels. Each pixel uses 24 bits, so the frame buffer size is $1,310,720 \times 24 / 8 = 3,932,160$ bytes.
+    \item \textbf{How long does it take to transmit the frame buffer over a 100 Mbit/s network?} it takes $3,932,160\text{ bytes} \times 8\text{ bits} / 100,000,000 = 315$ seconds.
+\end{enumerate}
+
+\section*{Question 4}
+\textbf{Assume a 15 cm diameter wafer has a cost of 12, contains 84 dies, and has $0.020$ defects$/cm^2$. \\ Assume a 20 cm diameter wafer has a cost of 15, contains 100 dies, and has 0.031 defects/cm 2 .}
+
+\end{document}
