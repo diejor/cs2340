@@ -1,0 +1,229 @@
+\documentclass{article}
+\usepackage{enumerate}
+\usepackage{enumitem}
+\usepackage{amsthm}
+\usepackage{amsmath}
+\usepackage{tikz}
+
+% \newtheoremstyle{style name}{space above}{space below}{body font}{indent amount}{head font}{head punct}{after head space}{head spec}
+
+\newtheoremstyle{questionstyle}{5mm}{5mm}{\normalfont}{0mm}{\bfseries}{}{1em}{}
+
+\theoremstyle{questionstyle}
+\newtheorem{q}{Question}
+
+\setlist[enumerate]{label={(\alph*)}}
+
+\author{Diego Rodrigues}
+\title{CS 2340 - Homework 4}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{q}\begin{enumerate} \leavevmode
+    \vspace{5mm}
+    \item \begin{itemize}
+        \item RegWrite = 1
+        \item ALUSrc = 0
+        \item MemRead = 0
+        \item MemWrite = 0
+        \item MemtoReg = 0
+        \item ALUOp = 00
+    \end{itemize}
+    \item \begin{itemize}
+        \item Instruction memory
+        \item Registers
+        \item ALU
+        \item Control unit
+    \end{itemize}
+\end{enumerate}\end{q}
+
+\begin{q}\begin{enumerate} \leavevmode
+    \item 25\% (from load) + 10\% (from store) = 35\%
+    \item 100\%
+    \item 28\% (from I-type) + 25\% (from load) = 53\%
+    \item The sign extend unit does not have 'off' cycles - it's always producing output whenever it has input, and it is up to the control logic to determine whether or not that output is utilized.
+\end{enumerate}\end{q}
+
+\begin{q}\begin{enumerate} \leavevmode
+    \item This would affect load instruction because it expect to write data from memory into a register.
+    \item  The ALU will always use the value from the second register for computations and never an immediate value. This would affect immediate instructions (e.g., addi, andi, ori, xori, lw, sw)
+\end{enumerate}\end{q}
+
+\begin{q}\begin{enumerate} \leavevmode
+    \item From the diagram and the description, it seems that most of the necessary components for supporting I-type instructions are already in place. The sign-extend unit is there and so is the ALU input multiplexor controlled by the ALUSrc signal.
+    \item \begin{itemize}
+        \item RegDst = 0, since the destination register is specified in the rt field of the instruction, and RegDst is irrelevant as we do not choose between rd and rt for I-type instructions.
+        \item MemToReg = 0, since we want to write the ALU result to the register, not data from memory.
+        \item MemRead = 0, as memory is not read during addi.
+        \item MemWrite = 0, since we are not writing to memory.
+        \item Branch = 0, as this is not a branch instruction.
+    \end{itemize}
+\end{enumerate}\end{q}
+
+\begin{q}\begin{enumerate} \leavevmode
+    \item R-format Instruction \begin{enumerate}
+        \item Register read 30ps
+        \item Instruction Mem 250ps
+        \item Mux 25ps
+        \item Register Setup 30ps
+        \item Register File 150ps
+        \item Mux 25ps
+        \item ALU 200ps
+        \item Mux 25ps
+        \item Register Setup 30ps (for writing back)
+        \item Register File 150ps
+        \item total = 965ps
+    \end{enumerate}
+    \item lw Instruction \begin{enumerate}
+        \item Register read 30ps
+        \item Instruction Mem 250ps
+        \item Mux 25ps
+        \item Register Setup 30ps
+        \item Register File 150ps
+        \item ALU 200ps
+        \item Memory 250ps 
+        \item Mux 25ps
+        \item Register Setup 30ps (for writing back)
+        \item Register File 150ps
+        \item total = 1140ps
+    \end{enumerate}
+    \item sw Instruction \begin{enumerate}
+        \item Register read 30ps
+        \item Instruction Mem 250ps
+        \item Mux 25ps
+        \item Register Setup 30ps
+        \item Register File 150ps
+        \item Mux 25ps
+        \item ALU 200ps
+        \item Memory 250ps 
+        \item total = 960ps
+    \end{enumerate}
+    \item beq Instruction \begin{enumerate}
+        \item Register read 30ps
+        \item Instruction Mem 250ps
+        \item Register Setup 30ps
+        \item Register File 150ps
+        \item Mux 25ps
+        \item ALU 200ps
+        \item Single Gate 5ps
+        \item Mux 25ps
+        \item Register read 30ps (PC)
+        \item total = 745ps
+    \end{enumerate}
+    \item i-format Instruction \begin{enumerate}
+        \item Register read 30ps
+        \item Instruction Mem 250ps
+        \item Register Setup 30ps
+        \item Register File 150ps
+        \item Mux 25ps
+        \item ALU 200ps
+        \item Mux 25ps
+        \item Register Setup 30ps (for writing back)
+        \item Register File 150ps
+        \item total = 890ps
+    \end{enumerate}
+    \item max of all = 1140ps
+\end{enumerate}\end{q}
+
+\begin{q}\begin{enumerate} \leavevmode
+    \item For a non-pipelined processor, the clock cycle time is the sum of all the stage latencies since each instruction must complete before the next one begins: $250+350+150+300+200=1250$ ps.
+    
+    For a pipelined processor, the clock cycle time is determined by the longest pipeline stage, which is the Instruction Decode (ID) stage: 350 ps.
+    \item In a non-pipelined processor, the total latency for a single instruction is the same as the clock cycle time: 1250 ps.
+    
+    In a pipelined processor, the latency for an instruction is the sum of the latencies of all stages it must pass through. However, because instructions are overlapped, we consider only the longest path for the clock cycle time. The total latency for the lw instruction in a pipeline would be the clock cycle time multiplied by the number of stages since each stage is one clock cycle: $350 p \times s5 stages=1750$.
+
+    \item You would split the longest stage to improve the overall clock cycle time. The longest stage is the ID stage at 350 ps. If we split it into two stages of 175 ps each, the new longest stage (if no other changes are made) would be the MEM stage at 300 ps.
+    
+    \item The new clock cycle time would then be 300 ps.
+    \item Utilization is calculated by considering how often the resource is used. For the data memory (MEM), which is used by lw and sw instructions, which account for 20\% and 15\% of the instructions respectively, the total utilization would be $20\%+15\%=35$.
+    \item The write-register port is used by any instruction that writes back to a register. This includes all R-type instructions (alu), lw instructions, and the result of any I-type instructions that are not stores. In the given instruction mix, this includes 45\% alu, 20\% lw, and does not include sw or beq (since they don't write to a register), so the total utilization is $45\%+20\%=65\%$.
+
+\end{enumerate}\end{q}
+
+\newpage
+\begin{q}\begin{enumerate} \leavevmode
+    Assuming that registers $\$s0$ and $\$s1$ are initialized to 11 and 22 respectively, and the pipeline does not handle data hazards, we have the following instructions:
+
+\begin{verbatim}
+    addi $s0, $s1, 5
+    add  $s2, $s0, $s1
+    addi $s3, $s0, 15
+\end{verbatim}
+
+The final values of the registers $\$s2$ and $\$s3$ will be computed as follows:
+
+\begin{enumerate}
+    \item The instruction \texttt{addi \$s0, \$s1, 5} will attempt to add 5 to the value of $\$s1$ (22) and store the result in $\$s0$. However, because the pipeline does not handle data hazards, the original value of $\$s0$ (11) is used in the subsequent instruction.
+    \item The instruction \texttt{add \$s2, \$s0, \$s1} will add the value of $\$s0$ (11) and $\$s1$ (22), resulting in 33, which will be stored in $\$s2$.
+    \item The instruction \texttt{addi \$s3, \$s0, 15} will again use the original value of $\$s0$ (11) and add 15 to it, resulting in 26, which will be stored in $\$s3$.
+\end{enumerate}
+
+So, the final values will be:
+\[\$s2 = 33\]
+\[\$s3 = 26\]
+\end{enumerate}\end{q}
+
+\begin{q}\begin{enumerate} \leavevmode
+\begin{itemize}
+  \item The \texttt{lw} instruction can use forwarding to resolve the dependency on the \texttt{add} instruction for register \$12.
+  \item The \texttt{sub} instruction has to stall because the loaded value in \$15 is not available until after the MEM stage of the \texttt{lw} instruction.
+  \item The second \texttt{add} instruction can use forwarding for the value in register \$13 from the \texttt{sub} instruction.
+\end{itemize}
+
+The pipeline diagram with stalls:
+
+\begin{center}
+\begin{tabular}{|c|c|c|c|c|c|}
+\hline
+Cycle & IF & ID & EX & MEM & WB \\
+\hline
+1 & add &  &  &  &  \\
+2 & lw & add &  &  &  \\
+3 & stall & lw & add &  &  \\
+4 & stall & stall & lw & add &  \\
+5 & sub & stall & stall & lw & add \\
+6 & add & sub & stall & stall & lw \\
+7 &  & add & sub & stall & stall \\
+8 &  &  & add & sub &  \\
+9 &  &  &  & add & sub \\
+\hline
+\end{tabular}
+\end{center}
+\end{enumerate}\end{q}
+
+\newpage
+\begin{q}\begin{enumerate} \leavevmode
+To minimize the performance by introducing the maximum number of stalls:
+\begin{verbatim}
+lw  $3, 0($5)
+add $7, $7, $3   // Stall: $3 is not ready
+lw  $4, 4($5)    // Stall: previous add is still executing
+add $8, $8, $4   // Stall: $4 is not ready
+add $10, $7, $8  // Stall: both adds are just executed
+sw  $6, 0($5)    // Stall: add to $10 is still executing
+beq $10, $11, loop // Stall: sw just executed
+\end{verbatim}
+
+The reordered sequence introduces data hazards between consecutive instructions that cannot be resolved without stalling, due to the absence of forwarding hardware.
+\end{enumerate}\end{q}
+
+\begin{q}[BONUS]\leavevmode
+
+\begin{verbatim}
+Instruction      IF    ID    EX    MEM   WB
+sw $s5, 12($s3)  1     2     3     4     5
+lw $s5, 8($s3)   stall 6     7     8     9
+sub $s4, $s2, $s1      stall 10    11    12
+bez $s4, label               stall stall 13
+add $s2, $s0, $s1                  stall 14
+sub $s2, $s6, $s1                        15
+\end{verbatim}
+
+In general, it is not possible to completely avoid stalls resulting from a structural hazard just by reordering code, since the hazard arises from hardware limitations rather than instruction order. However, certain reordering can minimize the impact by aligning memory access instructions with those that do not require memory access, thus optimizing the pipeline flow as much as possible.
+\end{q}
+
+
+\end{document}
