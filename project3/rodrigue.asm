@@ -15,7 +15,8 @@ separator:  .asciiz ", "
 ent_size:   .asciiz "Enter size of list: \n"
 fill_list:  .asciiz "Enter consecutive integers to fill list: \n"
 done_read:  .asciiz "Done reading... \n"
-merge_sort: .asciiz "Sorting list: "
+sorting:    .asciiz "Sorting list: "
+invalid:    .asciiz "Invalid size, please enter powers of 2 \n"
 done_merg:  .asciiz "Done merging, merged list: \n"
 
 
@@ -23,18 +24,74 @@ done_merg:  .asciiz "Done merging, merged list: \n"
 .text   
             .globl  main
 main:       
+    la      $s3,            list                                    # base address of the list
 
     # ------------------ Read integers -------------------
-    la      $a1,            list                                    # base address of the list
+    move   $a1,            $s3                                     # address of the list
     jal     read_ints                                               # read integers
 
     # ------------------ Print list -------------------
-    la      $a0,            merge_sort                              # message to user
-    la      $a1,            list                                    # address of the list
+    la      $a0,            sorting                                 # message to user
+    move   $a1, $s3
     jal     print_ary                                               # print list
+
+
+    # ------------------ Print sublists -------------------
+    $t
+    addi  $sp, $sp, -12
+    addi $a2, $s3, 4
+    li $a3, 2
+    jal copy_args
+
+
 
     b       end                                                     # exit
 
+
+    # ------------------ Merge Sort -------------------
+    # Size of the list to sort is assumed to be a power of 2
+    # used preserved registers:
+    #   $a1 = address of the list to sort
+    #   $s1 = index of subarray           (mutated)
+    #   $s2 = size of subarray            (mutated)
+merge_sort: 
+    addi    $sp,            $sp,        -12                          # allocate space
+    sw      $s1,            0($sp)
+    sw      $s2,           4($sp)
+    sw      $ra,           8($sp)
+
+    li      $s2,            1                                       # initialize size of subarray
+
+sort_loop:  
+    lw      $t0,            0($a1)                                  # size of the list
+    beq     $s2,            $t0,        sort_end                    # done sorting
+
+    move   $s1,           $zero                                   # initialize index of subarray
+    j      sort_subarrays                                          # sort subarrays
+
+    sll     $s3,            $s3,        1                           # double the size of the subarray
+    j       sort_loop                                               # continue sorting  
+
+    # -------------- Merge Subarrays ----------------
+sort_subarrays:
+    sw     $ra,            0($sp)
+
+    lw     $t0,            0($a1)                                   # size of the list
+    beq    $s2,           $t0,        sort_loop                     # end of the list
+
+
+
+    # -------------- Merge two subarrays ------------
+
+
+sort_end:   
+    lw      $s1,            0($sp)                                  # restore mutated registers
+    lw     $s2,            4($sp)
+    lw     $s3,            8($sp)
+    lw     $ra,            12($sp)
+
+    addi    $sp,            $sp,        8                           # deallocate space
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ end merge_sort
 
 
 
@@ -58,6 +115,10 @@ read_ints:
     li      $v0,            5                                       # syscall to read integer
     syscall 
     sw      $v0,            0($a1)                                  # store the size at the beginning of the list
+
+    # ------------ Check if size is a power of 2 ------------
+    move    $t0,            $v0                                     # number to check
+    jal     check_power2                                            # check if size is a power of 2
 
     # prompt user to enter the integers
     li      $v0,            4                                       # syscall to print string
@@ -449,10 +510,37 @@ csized_end:
 
     jr      $ra
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ end csa
+    
+
+
+
+    # ------------- Check if number is a power of 2 ------------
+    # used registers:
+    #   $t0 = number to compare
+    #   $t1 = used to divide by 2 and compare
+check_power2:
+    srl     $t1,            $t0,        1                           # divide by 2 test
+    beq     $t1,            $zero,      done_check                  # done checking if jump to zero
+    sll     $t1,            $t1,        1                           # multiply by 2 to compare if it has changed
+    blt     $t1,            $t0,        invalid_size                # invalid size, not a power of 2
+    srl     $t0,            $t0,        1                           # divide by 2 test
+    j       check_power2                                            # continue checking
+
+invalid_size:
+    li      $v0,            4                                       # syscall to print string
+    la      $a0,            invalid                                 # load "Invalid size, please enter powers of 2"
+    syscall 
+    j       main                                                    # restart the program
+
+done_check: 
+    jr      $ra
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ end check_power2
+
+
+
 
 
     # ------------------- End of program -------------------
-
 end:        
     li      $v0,            10                                      # exit
     syscall 
