@@ -10,13 +10,13 @@
 
 .data   
 list:       .space  128                                             # Allocate space for list to sort
-
 newline:    .asciiz "\n"
-es:         .asciiz "Enter size of list: \n"
-fl:         .asciiz "Enter consecutive integers to fill list: \n"
-dr:         .asciiz "Done reading... \n"
-ms:         .asciiz "Sorting list: "
-dmer:       .asciiz "Done merging, merged list: \n"
+separator:  .asciiz ", "
+ent_size:   .asciiz "Enter size of list: \n"
+fill_list:  .asciiz "Enter consecutive integers to fill list: \n"
+done_read:  .asciiz "Done reading... \n"
+merge_sort: .asciiz "Sorting list: "
+done_merg:  .asciiz "Done merging, merged list: \n"
 
 
 
@@ -25,73 +25,75 @@ dmer:       .asciiz "Done merging, merged list: \n"
 main:       
 
     # ------------------ Read integers -------------------
-    la      $a1,    list                                            # base address of the list
-    jal     ri                                                      # read integers
+    la      $a1,            list                                    # base address of the list
+    jal     read_ints                                               # read integers
 
-    la      $a0,    ms                                              # message to user
-    la      $a1,    list                                            # address of the list
-    jal     pa                                                      # print list
+    # ------------------ Print list -------------------
+    la      $a0,            merge_sort                              # message to user
+    la      $a1,            list                                    # address of the list
+    jal     print_ary                                               # print list
 
-    b      end                                                     # exit
+    b       end                                                     # exit
+
+
+
+
 
     # ------------------ Read integers -------------------
     # used preserved registers:
     #   $a1 = address of the list
     #   $s1 = index for the list
-ri:         
-    addi    $sp,    $sp,        -12                                 # allocate space
-    sw      $ra,    0($sp)
-    sw      $a1,    4($sp)
-    sw      $s1,    8($sp)
+read_ints:  
+    addi    $sp,            $sp,        -12                         # allocate space
+    sw      $ra,            0($sp)
+    sw      $a1,            4($sp)
+    sw      $s1,            8($sp)
 
     # prompt user to enter the number of integers
-    li      $v0,    4                                               # syscall to print string
-    la      $a0,    es                                              # load "Enter size of list: "
+    li      $v0,            4                                       # syscall to print string
+    la      $a0,            ent_size                                # load "Enter size of list: "
     syscall 
 
     # Read size of the list
-    li      $v0,    5                                               # syscall to read integer
+    li      $v0,            5                                       # syscall to read integer
     syscall 
-    sw      $v0,    0($a1)                                          # store the size at the beginning of the list
+    sw      $v0,            0($a1)                                  # store the size at the beginning of the list
 
     # prompt user to enter the integers
-    li      $v0,    4                                               # syscall to print string
-    la      $a0,    fl                                              # load "Enter consecutive integers to fill list: "
+    li      $v0,            4                                       # syscall to print string
+    la      $a0,            fill_list                               # load "Enter consecutive integers to fill list: "
     syscall 
 
-    move    $s1,    $zero                                           # initialize index for the list
+    move    $s1,            $zero                                   # initialize index for the list
 
-rl:         
-    lw      $t0,    0($a1)                                          # size of the list
-    beq     $s1,    $t0,        doner                               # done reading
+read_loop:  
+    lw      $t0,            0($a1)                                  # size of the list
+    beq     $s1,            $t0,        read_end                    # done reading
 
-    li      $v0,    5                                               # syscall to read integer
+    li      $v0,            5                                       # syscall to read integer
     syscall 
 
-    move    $t0,    $a1                                             # address of the list
-    move    $t1,    $s1                                             # index of the list
-    move    $t2,    $v0                                             # value to store
-    jal     ias                                                     # store the value in the list
+    move    $t0,            $a1                                     # address of the list
+    move    $t1,            $s1                                     # index of the list
+    move    $t2,            $v0                                     # value to store
+    jal     ary_save                                                # store the value in the list
 
-    addi    $s1,    $s1,        1                                   # increment index
-    b       rl                                                      # continue reading
+    addi    $s1,            $s1,        1                           # increment index
+    b       read_loop                                               # continue reading
 
     # ---------------------- Done reading -------------
-doner:      
-    li      $v0,    4                                               # syscall to print string
-    la      $a0,    dr                                              # msg to user, dmer = "Done reading... "
+read_end:   
+    li      $v0,            4                                       # syscall to print string
+    la      $a0,            done_read                               # msg to user, dmer = "Done reading... "
     syscall 
 
-    lw      $ra,    0($sp)                                          # restore ra
-    lw      $a1,    4($sp)                                          # restore a1
-    lw      $s1,    8($sp)                                          # restore s1
-    addi    $sp,    $sp,        12                                  # deallocate space
+    lw      $ra,            0($sp)                                  # restore ra
+    lw      $a1,            4($sp)                                  # restore a1
+    lw      $s1,            8($sp)                                  # restore s1
+    addi    $sp,            $sp,        12                          # deallocate space
     jr      $ra
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ end rl
 
-
-    # ---------------------- Merge Sort ------------------
-    # used preserved registers:
 
 
 
@@ -105,225 +107,354 @@ doner:
     #   $s3 = index for merged list         (mutated)
     #   $s5 = first list element            (mutated)
     #   $s6 = second list element           (mutated)
-mls:        
-    addi    $sp,    $sp,        -24                                 # allocate space for mutated registers
-    sw      $s1,    0($sp)
-    sw      $s2,    4($sp)
-    sw      $s3,    8($sp)
-    sw      $s5,    12($sp)
-    sw      $s6,    16($sp)
-    sw      $ra,    20($sp)
+merge_lists:
+    addi    $sp,            $sp,        -24                         # allocate space for mutated registers
+    sw      $s1,            0($sp)
+    sw      $s2,            4($sp)
+    sw      $s3,            8($sp)
+    sw      $s5,            12($sp)
+    sw      $s6,            16($sp)
+    sw      $ra,            20($sp)
 
-    # s0 = index for first list
-    # s1 = index for second list
-    # s2 = index for merged list
-    move    $s1,    $zero                                           # initialize index for first list
-    move    $s2,    $zero                                           # initialize index for second list
-    move    $s3,    $zero                                           # initialize index for merged list
+    move    $s1,            $zero                                   # initialize index for first list
+    move    $s2,            $zero                                   # initialize index for second list
+    move    $s3,            $zero                                   # initialize index for merged list
 
     # ---------------------- Merge loop ----------------
-ml:         
+merge_loop: 
     # ------------- checking out of bounds -------------
-    lw      $t0,    0($a1)                                          # size of first
-    bge     $s1,    $t0,        mrs                                 # end of first list -> append remaining elements from second list
+    lw      $t0,            0($a1)                                  # size of first
+    bge     $s1,            $t0,        merge_second                # end of first list -> append remaining elements from second list
 
     # ------------- checking out of bounds -------------
-    lw      $t0,    0($a2)                                          # size of second
-    bge     $s2,    $t0,        mrf                                 # end of second list -> append remaining elements from first list
+    lw      $t0,            0($a2)                                  # size of second
+    bge     $s2,            $t0,        merge_first                 # end of second list -> append remaining elements from first list
 
     # Load current elements from both lists
     # s5 = first list element
     # s6 = second list element
 
     # --------- Load first element ---------
-    move    $t0,    $a1                                             # address of the first list
-    move    $t1,    $s1                                             # index of the first list
-    jal     ial                                                     # get the element at the index of the first list
-    move    $s5,    $v0                                             # store first list element in s4
+    move    $t0,            $a1                                     # address of the first list
+    move    $t1,            $s1                                     # index of the first list
+    jal     ary_load                                                # get the element at the index of the first list
+    move    $s5,            $v0                                     # store first list element in s4
 
     # --------- Load second element ---------
-    move    $t0,    $a2                                             # address of the second list
-    move    $t1,    $s2                                             # index of the second list
-    jal     ial                                                     # get the element at the index of the second list
-    move    $s6,    $v0                                             # store second list element in s5
+    move    $t0,            $a2                                     # address of the second list
+    move    $t1,            $s2                                     # index of the second list
+    jal     ary_load                                                # get the element at the index of the second list
+    move    $s6,            $v0                                     # store second list element in s5
 
     # Compare and store the smaller element
-    blt     $s5,    $s6,        sf                                  # first element is smaller -> store it
+    blt     $s5,            $s6,        save_first                  # first element is smaller -> store it
 
-ss:                                                                 # store second element
-    move    $t2,    $s6                                             # value to store
-    addi    $s2,    $s2,        1                                   # Increment index of the second list
-    j       mi
+save_second:                                                        # store second element
+    move    $t2,            $s6                                     # value to store
+    addi    $s2,            $s2,        1                           # Increment index of the second list
+    j       merge_incre
 
-sf:                                                                 # store first element
-    move    $t2,    $s5                                             # value to store
-    addi    $s1,    $s1,        1                                   # increment index of the first list
+save_first:                                                         # store first element
+    move    $t2,            $s5                                     # value to store
+    addi    $s1,            $s1,        1                           # increment index of the first list
 
-mi:                                                                 # increment index of the merged list, note index is incremented once
+merge_incre:                                                        # increment index of the merged list, note index is incremented once
     # --------- Store the smaller element ---------
-    move    $t0,    $a3                                             # address of the merged list
-    move    $t1,    $s3                                             # index of the merged list
-    jal     ias                                                     # store the value in the merged list, note that the value to store was set in $t2
+    move    $t0,            $a3                                     # address of the merged list
+    move    $t1,            $s3                                     # index of the merged list
+    jal     ary_save                                                # store the value in the merged list, note that the value to store was set in $t2
 
-    addi    $s3,    $s3,        1                                   # increment index of the merged list
-    j       ml                                                      # continue merging, loop is broken when one of the lists is empty
+    addi    $s3,            $s3,        1                           # increment index of the merged list
+    j       merge_loop                                              # continue merging, loop is broken when one of the lists is empty
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ end ml
 
     # ------------- Append remaining elements from first list ----
-mrf:        
+merge_first:
     # ------------- checking out of bounds -------------
-    lw      $t0,    0($a1)                                          # size of first list
-    bge     $s1,    $t0,        md                                  # end of first list -> append remaining elements from second list
+    lw      $t0,            0($a1)                                  # size of first list
+    bge     $s1,            $t0,        merge_end                   # end of first list -> append remaining elements from second list
 
     # --------- Load first element ---------
-    move    $t0,    $a1                                             # address of the first list
-    move    $t1,    $s1                                             # index of the first list
-    jal     ial                                                     # get the element at the index of the first list
+    move    $t0,            $a1                                     # address of the first list
+    move    $t1,            $s1                                     # index of the first list
+    jal     ary_load                                                # get the element at the index of the first list
 
     # --------- Store the element ---------
-    move    $t0,    $a3                                             # address of the merged list
-    move    $t1,    $s3                                             # index of the merged list
-    move    $t2,    $v0                                             # value to store
-    jal     ias                                                     # store the value in the merged list
+    move    $t0,            $a3                                     # address of the merged list
+    move    $t1,            $s3                                     # index of the merged list
+    move    $t2,            $v0                                     # value to store
+    jal     ary_save                                                # store the value in the merged list
 
-    addi    $s1,    $s1,        1                                   # increment index of the first list
-    addi    $s3,    $s3,        1                                   # increment index of the merged list
-    j       mrf                                                     # continue appending remaining elements from first list
+    addi    $s1,            $s1,        1                           # increment index of the first list
+    addi    $s3,            $s3,        1                           # increment index of the merged list
+    j       merge_first                                             # continue appending remaining elements from first list
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ end mrf
 
     # ------------- Append remaining elements from second list ----------
-mrs:        
+merge_second:
     # ------------- checking out of bounds -------------
-    lw      $t0,    0($a2)                                          # size of second list
-    bge     $s2,    $t0,        md                                  # end of second list -> merge is complete
+    lw      $t0,            0($a2)                                  # size of second list
+    bge     $s2,            $t0,        merge_end                   # end of second list -> merge is complete
 
     # --------- Load second element ---------
-    move    $t0,    $a2                                             # address of the second list
-    move    $t1,    $s2                                             # index of the second list
-    jal     ial                                                     # get the element at the index of the second list
+    move    $t0,            $a2                                     # address of the second list
+    move    $t1,            $s2                                     # index of the second list
+    jal     ary_load                                                # get the element at the index of the second list
 
     # --------- Store the element ---------
-    move    $t0,    $a3                                             # address of the merged list
-    move    $t1,    $s3                                             # index of the merged list
-    move    $t2,    $v0                                             # value to store
-    jal     ias                                                     # store the value in the merged list
+    move    $t0,            $a3                                     # address of the merged list
+    move    $t1,            $s3                                     # index of the merged list
+    move    $t2,            $v0                                     # value to store
+    jal     ary_save                                                # store the value in the merged list
 
-    addi    $s2,    $s2,        1                                   # increment index of the second list
-    addi    $s3,    $s3,        1                                   # increment index of the merged list
-    j       mrs
+    addi    $s2,            $s2,        1                           # increment index of the second list
+    addi    $s3,            $s3,        1                           # increment index of the merged list
+    j       merge_second
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ end mrs
 
-md:         
-    sw      $s3,    0($a3)                                          # store size of merged list
-    move    $v0,    $a3                                             # return address of merged list
+merge_end:  
+    sw      $s3,            0($a3)                                  # store size of merged list
+    move    $v0,            $a3                                     # return address of merged list
 
-    lw      $s1,    0($sp)                                          # restore mutated registers
-    lw      $s2,    4($sp)
-    lw      $s3,    8($sp)
-    lw      $s5,    12($sp)
-    lw      $s6,    16($sp)
-    lw      $ra,    20($sp)
-    addi    $sp,    $sp,        24                                  # deallocate space for mutated registers
+    lw      $s1,            0($sp)                                  # restore mutated registers
+    lw      $s2,            4($sp)
+    lw      $s3,            8($sp)
+    lw      $s5,            12($sp)
+    lw      $s6,            16($sp)
+    lw      $ra,            20($sp)
+    addi    $sp,            $sp,        24                          # deallocate space for mutated registers
     jr      $ra
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ end mls
 
+
+
+
     # ------------------- Index array load -------------------
-    # Returns to $v0 the value of the element at the index of the array
+    # Returns to $v0 the value of the element at the index of the sized array
     # Note that the first element of the array is the size of the list
+    # Sized array is a list with the first element being the size of the list.
     # used registers:
     #   $t0 = address of the array
     #   $t1 = index for the array
-ial:        
-    addi    $sp,    $sp,        -4                                  # allocate space
-    sw      $ra,    0($sp)
+ary_load:   
+    addi    $sp,            $sp,        -4                          # allocate space
+    sw      $ra,            0($sp)
 
-    addi    $t1,    $t1,        1                                   # increment index to skip the first element
-    sll     $t1,    $t1,        2                                   # index in bytes
-    add     $t0,    $t0,        $t1                                 # address of the element
-    lw      $v0,    0($t0)                                          # load element
+    addi    $t1,            $t1,        1                           # increment index to skip the first element
+    sll     $t1,            $t1,        2                           # index in bytes
+    add     $t0,            $t0,        $t1                         # address of the element
+    lw      $v0,            0($t0)                                  # load element
 
-    lw      $ra,    0($sp)                                          # restore ra
-    addi    $sp,    $sp,        4                                   # deallocate space
+    lw      $ra,            0($sp)                                  # restore ra
+    addi    $sp,            $sp,        4                           # deallocate space
     jr      $ra
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ end ia
 
+
+
+
+
     # ------------------- Index array store -------------------
-    # Stores the value of $a2 at the index of the array
+    # Stores the value of $a2 at the index of the sized array
     # Note that the first element of the array is the size of the list
+    # Sized array is a list with the first element being the size of the list.
     # used registers:
     #   $t0 = address of the array
     #   $t1 = index for the array
     #   $t2 = value to store
-ias:        
-    addi    $sp,    $sp,        -4                                  # allocate space
-    sw      $ra,    0($sp)
+ary_save:   
+    addi    $sp,            $sp,        -4                          # allocate space
+    sw      $ra,            0($sp)
 
-    addi    $t1,    $t1,        1                                   # increment index to skip the first element
-    sll     $t1,    $t1,        2                                   # index in bytes
-    add     $t1,    $t0,        $t1                                 # address of the element
-    sw      $t2,    0($t1)                                          # store element
+    addi    $t1,            $t1,        1                           # increment index to skip the first element
+    sll     $t1,            $t1,        2                           # index in bytes
+    add     $t1,            $t0,        $t1                         # address of the element
+    sw      $t2,            0($t1)                                  # store element
 
-    lw      $ra,    0($sp)                                          # restore ra
-    addi    $sp,    $sp,        4                                   # deallocate space
+    lw      $ra,            0($sp)                                  # restore ra
+    addi    $sp,            $sp,        4                           # deallocate space
     jr      $ra
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ end ias
+
+
+
 
     # ------------------- Print list -------------------
     # used preserved registers:
     #   $a0 = message to user (unmutated)
     #   $a1 = address of the array to print (unmutated)
     #   $s1 = index for the array to print  (mutated)
-pa:         
-    addi    $sp,    $sp,        -12                                 # allocate space for mutated registers
-    sw      $a0,    0($sp)
-    sw      $s1,    4($sp)
-    sw      $ra,    8($sp)
+print_ary:  
+    addi    $sp,            $sp,        -12                         # allocate space for mutated registers
+    sw      $a0,            0($sp)
+    sw      $s1,            4($sp)
+    sw      $ra,            8($sp)
 
     # Print message to user, note that $a0 is passed as an argument
-    li      $v0,    4
+    li      $v0,            4
     syscall 
 
-    move    $s1,    $zero                                           # initialize index for the list
+    li      $a0,            '['                                     # print opening bracket
+    li      $v0,            11
+    syscall 
+
+    move    $s1,            $zero                                   # initialize index for the list
 
     # ------------------- Print loop -------------------
-pl:         
-    lw      $t0,    0($a1)                                          # size of the list
-    bge     $s1,    $t0,        ep                                  # end of the list
+print_loop: 
+    lw      $t0,            0($a1)                                  # size of the list
+    subi    $t0,            $t0,        1                           # decrement size to get the last index
+    bge     $s1,            $t0,        print_end                   # last element of the list
 
     # --------- Load element ---------
-    move    $t0,    $a1                                             # address of the array
-    move    $t1,    $s1                                             # index of the array
-    jal     ial                                                     # get the element at the index of the array
+    move    $t0,            $a1                                     # address of the array
+    move    $t1,            $s1                                     # index of the array
+    jal     ary_load                                                # get the element at the index of the array
 
-    move    $a0,    $v0                                             # value to print
-    li      $v0,    1
+    move    $a0,            $v0                                     # value to print
+    li      $v0,            1
     syscall 
 
-    li      $a0,    ' '                                   # print separator
-    li      $v0,    11
+    la      $a0,            separator                               # print separator
+    li      $v0,            4
     syscall 
 
-    addi    $s1,    $s1,        1                                   # increment index
-    b       pl
+    addi    $s1,            $s1,        1                           # increment index
+    b       print_loop
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ end pl
 
     # ------------------- End print list -------------------
-ep:         
-    la      $a0,    newline                                         # print newline, ASCII code for newline is 10
-    li      $v0,    4
+print_end:  
+    # --------- Load last element ---------
+    move    $t0,            $a1                                     # address of the array
+    move    $t1,            $s1                                     # index of the array
+    jal     ary_load                                                # get the element at the index of the array
+
+    move    $a0,            $v0                                     # value to print
+    li      $v0,            1
     syscall 
 
-    lw      $a0,    0($sp)                                          # restore unmutated registers
-    lw      $s1,    4($sp)
-    lw      $ra,    8($sp)
-    addi    $sp,    $sp,        12                                  # deallocate space
+    la      $a0,            ']'                                     # print closing bracket
+    li      $v0,            11
+    syscall 
+
+    la      $a0,            newline                                 # print newline, ASCII code for newline is 10
+    li      $v0,            4
+    syscall 
+
+    lw      $a0,            0($sp)                                  # restore unmutated registers
+    lw      $s1,            4($sp)
+    lw      $ra,            8($sp)
+    addi    $sp,            $sp,        12                          # deallocate space
 
 
     jr      $ra
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ end pa
 
+
+
+    # ------ Copies arg-sized list to sized list ------
+    # A sized list is a list with the first element being the size of the list.
+    # A arg-sized list has the size passed as an argument.
+
+    # used preserved registers:
+    #   $a1 = address to copy to the sized list
+    #   $a2 = address of arg-sized list
+    #   $a3 = size of the arg-sized list
+    #   $s1 = index for the arg-sized list      (mutated)
+copy_args:  
+    addi    $sp,            $sp,        -8                          # allocate space
+    sw      $s1,            0($sp)
+    sw      $ra,            4($sp)
+
+    move    $s1,            $zero                                   # initialize index for the arg-sized list
+
+    # Copy size to sized list
+    sw      $a1,            0($a0)                                  # store size of the list
+    # ------------------- Copy loop -------------------
+cargs_loop: 
+    bge     $s1,            $a3,        cargs_end                   # end of the list
+
+    # --------- Load element ---------
+    sll     $t1,            $s1,        2                           # index in bytes
+    add     $t1,            $a2,        $t1                         # address of the element
+    lw      $t2,            0($t1)                                  # load element from arg-sized list
+
+    # --------- Store element ---------
+    move    $t0,            $a1                                     # address of the sized list
+    move    $t1,            $s1                                     # index of the sized list
+    jal     ary_save                                                # store the value in the sized list note that the value to store was set in $t2 previously
+
+    addi    $s1,            $s1,        1                           # increment index
+    b       cargs_loop                                              # continue copying
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ end cl
+
+    # ------------------- End copy list -------------------
+cargs_end:  
+    lw      $s1,            0($sp)                                  # restore mutated registers
+    lw      $ra,            4($sp)
+    addi    $sp,            $sp,        8                           # deallocate space
+
+    move    $v0,            $a1                                     # return address of sized list
+    move    $v1,            $a3                                     # return size of the list
+
+    jr      $ra
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ end cas
+
+
+    # ----- Copy sized list to arg-sized list ------
+    # A sized list is a list with the first element being the size of the list.
+    # An arg-sized list has the size passed as an argument.
+    #       
+    # Used preserved registers:
+    #   $a1 = address of arg-sized list
+    #   $a2 = address of sized list
+    #   $s1 = index for the arg-sized list      (mutated)
+copy_sized: 
+    addi    $sp,            $sp,        -8                          # allocate space
+    sw      $s1,            0($sp),     #
+    sw      $ra,            4($sp)
+
+    move    $s1,            $zero                                   # initialize index for the arg-sized list
+
+    # Copy size to arg-sized list
+    lw      $v1,            0($a2)                                  # save size of the list to return $v1
+
+    # ------------------- Copy loop -------------------
+csized_loop:
+    bge     $s1,            $v1,        csized_end                  # end of the list
+
+    # --------- Load element ---------
+    move    $t0,            $a2                                     # address of the sized list
+    move    $t1,            $s1                                     # index of the sized list
+    jal     ary_load                                                # get the element at the index of the sized list
+
+    # --------- Store element ---------
+    sll     $t1,            $s1,        2                           # index in bytes
+    add     $t1,            $a1,        $t1                         # address of the element
+    sw      $v0,            0($t1)                                  # store element in arg-sized list
+
+    addi    $s1,            $s1,        1                           # increment index
+    b       csized_loop                                             # continue copying
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ end cl
+
+    # ------------------- End copy list -------------------
+csized_end: 
+    lw      $s1,            0($sp)                                  # restore mutated registers
+    lw      $ra,            4($sp)
+    addi    $sp,            $sp,        8                           # deallocate space
+
+    move    $v0,            $a1                                     # return address of arg-sized list
+    # note that $v1 is the size of the list
+
+    jr      $ra
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ end csa
+
+
+    # ------------------- End of program -------------------
+
 end:        
-    li      $v0,    10                                              # exit
+    li      $v0,            10                                      # exit
     syscall 
 
 
