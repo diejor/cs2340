@@ -27,21 +27,21 @@ main:
     la      $s3,            list                                    # base address of the list
 
     # ------------------ Read integers -------------------
-    move   $a1,            $s3                                     # address of the list
+    move    $a1,            $s3                                     # address of the list
     jal     read_ints                                               # read integers
 
     # ------------------ Print list -------------------
     la      $a0,            sorting                                 # message to user
-    move   $a1, $s3
+    move    $a1,            $s3
     jal     print_ary                                               # print list
 
 
     # ------------------ Print sublists -------------------
-    addi  $sp, $sp, -12
-    move  $a1, $sp
-    addi $a2, $s3, 8
-    li $a3, 2
-    jal copy_args
+    addi    $sp,            $sp,        -12
+    move    $a1,            $sp
+    addi    $a2,            $s3,        8
+    li      $a3,            2
+    jal     copy_args
 
     jal     print_ary                                               # print list
 
@@ -51,33 +51,44 @@ main:
     # ------------------ Merge Sort -------------------
     # Size of the list to sort is assumed to be a power of 2
     # used preserved registers:
-    #   $a1 = address of the list to sort
+    #   $a0 = address of the list to sort
     #   $s1 = index of subarray           (mutated)
     #   $s2 = size of subarray            (mutated)
+    #   $s3 = size of the list            (mutated)
 merge_sort: 
-    addi    $sp,            $sp,        -12                          # allocate space
+    addi    $sp,            $sp,        -16                         # allocate space
     sw      $s1,            0($sp)
-    sw      $s2,           4($sp)
-    sw      $ra,           8($sp)
+    sw      $s2,            4($sp)
+    sw      $s3,            8($sp)
+    sw      $ra,            12($sp)
 
     li      $s2,            1                                       # initialize size of subarray
+    lw      $s3,            0($a0)                                  # size of the list
 
 sort_loop:  
-    lw      $t0,            0($a1)                                  # size of the list
-    beq     $s2,            $t0,        sort_end                    # done sorting
+    beq     $s2,            $s3,        sort_end                    # done sorting
 
-    move   $s1,           $zero                                   # initialize index of subarray
-    j      sort_subarrays                                          # sort subarrays
+    move    $s1,            $zero                                   # initialize index of subarray
+    j       sort_subarrays                                          # sort subarrays
 
     sll     $s3,            $s3,        1                           # double the size of the subarray
-    j       sort_loop                                               # continue sorting  
+    j       sort_loop                                               # continue sorting
 
     # -------------- Merge Subarrays ----------------
 sort_subarrays:
-    sw     $ra,            0($sp)
+    beq     $s1,            $s3,        sort_loop                   # end of the list
 
-    lw     $t0,            0($a1)                                   # size of the list
-    beq    $s2,           $t0,        sort_loop                     # end of the list
+    # -------- Copy first subarray ---------
+    addi    $t0,            $s2,        4                           # size of the first subarray including first element for tracking size
+    sub     $sp,            $sp,        $t0                         # allocate space for the first subarray
+    add     $a1,            $sp,        $s1                         # address of the first subarray
+
+    move    $a2,            $a0                                     # address of the list
+    move    $a3,            $s2                                     # size of the first subarray
+jal     copy_sized                                              # copy the first subarray
+
+    # -------- Copy second subarray ---------
+    addi    $t0,            $s2,        4                           # size of the second subarray including first element for tracking size
 
 
 
@@ -86,9 +97,9 @@ sort_subarrays:
 
 sort_end:   
     lw      $s1,            0($sp)                                  # restore mutated registers
-    lw     $s2,            4($sp)
-    lw     $s3,            8($sp)
-    lw     $ra,            12($sp)
+    lw      $s2,            4($sp)
+    lw      $s3,            8($sp)
+    lw      $ra,            12($sp)
 
     addi    $sp,            $sp,        8                           # deallocate space
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ end merge_sort
@@ -510,7 +521,7 @@ csized_end:
 
     jr      $ra
     # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ end csa
-    
+
 
 
 
