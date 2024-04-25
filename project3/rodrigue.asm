@@ -37,13 +37,13 @@ main:
 
 
     # ------------------ Print sublists -------------------
-    $t
     addi  $sp, $sp, -12
-    addi $a2, $s3, 4
+    move  $a1, $sp
+    addi $a2, $s3, 8
     li $a3, 2
     jal copy_args
 
-
+    jal     print_ary                                               # print list
 
     b       end                                                     # exit
 
@@ -431,7 +431,7 @@ copy_args:
     move    $s1,            $zero                                   # initialize index for the arg-sized list
 
     # Copy size to sized list
-    sw      $a1,            0($a0)                                  # store size of the list
+    sw      $a3,            0($a1)                                  # store size of the list
     # ------------------- Copy loop -------------------
 cargs_loop: 
     bge     $s1,            $a3,        cargs_end                   # end of the list
