@@ -1,0 +1,216 @@
+\documentclass{article}
+
+\title{Homework 5}
+\author{Diego Rodrigues}
+\date{\today}
+
+\usepackage{amsmath}
+
+\begin{document}
+\maketitle
+
+\section{Problem 1}
+\begin{enumerate}
+    \item[a.] \textbf{How many 32-bit integers can be stored in a 16-byte cache block?}
+    Each 32-bit integer occupies 4 bytes:
+    \[
+    \frac{16 \text{ bytes}}{4 \text{ bytes/integer}} = 4 \text{ integers}.
+    \]
+    
+    \item[b.] \textbf{References to which variables exhibit temporal locality?}
+    Temporal locality is exhibited by the loop variables \verb|I|, \verb|J| and addresses of \verb|A| and \verb|B| since they are accessed repeatedly in every iteration of the loop. Also \verb|B(I, 0)| is accessed multiple times in the inner loop and therefore exhibits temporal locality, only in the inner loop as \verb|I| changes in the outer loop and breaks temporal locality.
+    
+    \item[c.] \textbf{References to which variables exhibit spatial locality?}
+    Spatial locality is exhibited by the variables \verb|A(J, I)| it is accessed contiguously in memory because arrays are stored in row-major order. Notice that \verb|A(J, I)| is accessed in column-major which doesnt exhibit spatial locality in C. And \verb|B(I, 0)| is not accessed contiguously as it is jumping row by row in the outer loop.
+
+    \item[d.] \textbf{How many 16-byte cache blocks are needed to store all 32-bit matrix elements being referenced?}
+    Given that the matrix has 8 rows and 8000 columns, and each element is a 32-bit integer (4 bytes), the total number of cache blocks required is:
+    \[
+    \frac{8 \times 8000 \times 4 \text{ bytes}}{16 \text{ bytes/block}} = 16000 \text{ blocks}.
+    \]
+    
+    \item[e.] \textbf{References to which variables exhibit temporal locality?}
+    Temporal locality is exhibited by the variables \verb|I|, \verb|J| and addresses of \verb|A| and \verb|B|. Also \verb|B(I, 0)| is accessed multiple times in the inner loop and therefore exhibits temporal locality, only in the inner loop as \verb|I| changes in the outer loop and breaks temporal locality.
+    
+    \item[f.] \textbf{References to which variables exhibit spatial locality?}
+    This time \verb|A(J, I)| and \verb|B(I, 0)| exhibits spatial locality, as it is accessed contiguously through the outer loop. In this case \verb|A(I, J)| is not accessed contiguously as it will jump in memory because of the column-major order.
+\end{enumerate}
+
+
+\section{Problem 2}
+\begin{enumerate}
+    \item[a.] 
+    \begin{table}[h!]
+    \centering
+    \begin{tabular}{|c|c|c|c|}
+    \hline
+    Binary Address & Tag & Index & Hit/Miss \\
+    \hline
+    00000011 & 0000 & 0011 & miss \\
+    10110100 & 1011 & 0100 & miss \\
+    00101011 & 0010 & 1011 & miss \\
+    00000010 & 0000 & 0010 & miss \\
+    10111111 & 1011 & 1111 & miss \\
+    01011000 & 0101 & 1000 & miss \\
+    10111110 & 1011 & 1110 & miss \\
+    00001110 & 0000 & 1110 & miss \\
+    10110101 & 1011 & 0101 & miss \\
+    10110101 & 1011 & 0101 & miss \\
+    00101100 & 0010 & 1100 & miss \\
+    10111010 & 1011 & 1010 & miss \\
+    11111101 & 1111 & 1101 & miss \\
+    \hline
+    \end{tabular}
+    \caption{Cache A: Direct-mapped cache with 16 one-word blocks}
+    \end{table}
+
+    \item[b.] 
+    \begin{table}[h!]
+    \centering
+    \begin{tabular}{|c|c|c|c|}
+    \hline
+    Binary Address & Tag & Index & Hit/Miss \\
+    \hline
+    00000011 & - & 0001 & miss \\
+    10110100 & 101 & 1010 & miss \\
+    00101011 & 1 & 0101 & miss \\
+    00000010 & - & 0001 & hit \\
+    10111111 & 101 & 1111 & miss \\
+    01011000 & 10 & 1100 & miss \\
+    10001110 & 100 & 0111 & miss \\
+    00001110 & - & 0111 & miss \\
+    00001110 & - & 0111 & hit \\
+    10110101 & 101 & 1010 & hit \\
+    00101100 & 1 & 0110 & miss \\
+    10111010 & 101 & 1101 & miss \\
+    11111101 & 111 & 1110 & miss \\
+    \hlin
+    \end{tabular}
+    \caption{Cache B: Direct-mapped cache with two-word blocks and a total of 8 blocks}
+    \end{table}
+\end{enumerate}
+
+
+% Problem 3
+\section{Problem 3}
+\begin{enumerate}
+\item[a.] The cache block size is \textbf{4 words}.
+\item[b.] The cache has \textbf{32 entries}.
+\item[c.] The ratio between total bits required for such a cache implementation over the data storage bits is approximately \textbf{1.1796875}.
+
+\item{d.}
+\begin{table}[h!]
+\centering
+\begin{tabular}{|c|c|c|c|c|c|}
+\hline
+Hex Address & Tag & Index & Offset & Hit/Miss & Replaced Tag \\
+\hline
+00 & 0000000000000000000000 & 00000 & 0000 & miss & - \\
+04 & 0000000000000000000000 & 00000 & 0100 & hit & - \\
+10 & 0000000000000000000000 & 00000 & 0000 & hit & - \\
+84 & 0000000000000000000000 & 00100 & 0100 & miss & - \\
+E8 & 0000000000000000000000 & 00111 & 1000 & miss & - \\
+A0 & 0000000000000000000000 & 00101 & 0000 & miss & - \\
+400 & 0000000000000000000001 & 00000 & 0000 & miss & 0000000000000000000000 \\
+1E & 0000000000000000000000 & 00000 & 1110 & miss & 0000000000000000000001 \\
+8C & 0000000000000000000000 & 00100 & 1100 & hit & - \\
+C1C & 0000000000000000000011 & 00000 & 1100 & miss & 0000000000000000000000 \\
+B4 & 0000000000000000000000 & 00101 & 0100 & hit & - \\
+884 & 0000000000000000000010 & 00100 & 0100 & miss & 0000000000000000000000 \\
+\hline
+\end{tabular}
+\caption{Cache actions for each address reference.}
+\end{table}
+
+\item[e.] The hit ratio for the given cache references is \textbf{0.3333} (or \textbf{33.33\%}).
+
+\item[f.]
+\begin{itemize}
+    \item $<$00000, 0000000000000000000011$>$
+    \item $<$00100, 0000000000000000000010$>$
+    \item $<$00101, 0000000000000000000000$>$
+    \item $<$00111, 0000000000000000000000$>$
+\end{itemize}
+\end{enumerate}
+
+
+\section*{Question 4 Answers}
+
+\begin{enumerate}
+
+\item[a.]
+\begin{tabular}{|c|c|}
+\hline
+Word Address & Hit/Miss \\
+\hline
+2 & miss \\
+3 & miss \\
+11 & miss \\
+16 & miss \\
+21 & miss \\
+13 & miss \\
+64 & miss \\
+48 & miss \\
+19 & miss \\
+11 & hit \\
+3 & miss \\
+22 & miss \\
+4 & miss \\
+27 & miss \\
+6 & miss \\
+11 & miss \\
+\hline
+\end{tabular}
+
+Final cache contents:
+\begin{tabular}{|c|c|}
+\hline
+Set Index & Words \\
+\hline
+0 & 64, 48 \\
+1 & - \\
+2 & 2 \\
+3 & 27, 11 \\
+4 & 4 \\
+5 & 21, 13 \\
+6 & 22, 6 \\
+7 & - \\
+\hline
+\end{tabular}
+
+\item[b.]
+\begin{tabular}{|c|c|}
+\hline
+Word Address & Hit/Miss \\
+\hline
+2 & miss \\
+3 & miss \\
+11 & miss \\
+16 & miss \\
+21 & miss \\
+13 & miss \\
+64 & miss \\
+48 & miss \\
+19 & miss \\
+11 & hit \\
+3 & hit \\
+22 & miss \\
+4 & miss \\
+27 & miss \\
+6 & miss \\
+11 & hit \\
+\hline
+\end{tabular}
+
+Final cache contents:
+\begin{tabular}{|c|}
+\hline
+Words \\
+\hline
+2, 3, 11, 16, 21, 13, 64, 48, 19, 22, 4, 27, 6 \\
+\hline
+\end{tabular}
+
+\end{enumerate}
+
+\end{document}
